@@ -1,1 +1,2 @@
 # ISE-VR-Project
+Interactive Skills Enhancer (ISE): A Virtual Reality-Based Learning Tool for Children with ASD and ID	Project Concept: Enhanced Education System for specially abled Background: Interpersonal skills are learned and mastered by children when they interact with the world, but for children with Autism Spectrum Disorder (ASD) and Intellectual Disabilities (ID) this is where the challenges lie.
