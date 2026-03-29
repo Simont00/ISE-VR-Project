@@ -17,3 +17,14 @@ def home():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
+from flask import Flask
+from backend.routes.session_routes import session_bp
+
+app = Flask(__name__)
+
+# register blueprint
+app.register_blueprint(session_bp, url_prefix="/sessions")
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
