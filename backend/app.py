@@ -17,6 +17,7 @@ def home():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
+
 from flask import Flask
 from backend.routes.session_routes import session_bp
 
