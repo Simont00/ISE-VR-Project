@@ -1,32 +1,21 @@
 from flask import Flask
-<<<<<<< HEAD
-from routes.auth_routes import auth
+from backend.config import Config
+from backend.database.db import db
+
+# Existing routes (unchanged)
+from backend.routes.auth_routes import auth
 from backend.routes.emotion_routes import emotion_bp
+from backend.routes.session_routes import session_bp
+
+# ✅ ONLY CHANGE HERE (scenerio fix)
+from backend.routes.scenerio_routes import scenerio_bp
+
 
 app = Flask(__name__)
+app.config.from_object(Config)
 
-# Register blueprints
-app.register_blueprint(auth, url_prefix="/api/auth")
-app.register_blueprint(emotion_bp)
-
+# Secret key
 app.config["SECRET_KEY"] = "supersecretkey"
-
-# default route
-@app.route("/")
-def home():
-    return {"message": "Backend running successfully 🚀"}
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
-=======
-from backend.models.scenario_model import db, Scenario
-from backend.routes.scenario_routes import scenario_bp
-
-app = Flask(__name__)
-
-# Database config (SQLite example)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///ise_vr.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize DB
 db.init_app(app)
@@ -55,4 +44,23 @@ if __name__ == '__main__':
         db.create_all()          # Create tables if they don't exist
         insert_dummy_data()      # Insert dummy scenarios
     app.run(debug=True, port=5001)  # Run on port 5001 to avoid conflict
->>>>>>> 6745c3de8b2d36830d69722f34be642c57d9fae8
+=========
+from routes.auth_routes import auth
+from backend.routes.emotion_routes import emotion_bp
+
+app = Flask(__name__)
+
+# Register blueprints
+app.register_blueprint(auth, url_prefix="/api/auth")
+app.register_blueprint(emotion_bp)
+
+app.config["SECRET_KEY"] = "supersecretkey"
+
+# default route
+@app.route("/")
+def home():
+    return {"message": "Backend running successfully 🚀"}
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
+>>>>>>>>> Temporary merge branch 2
