@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
-from Models.user_model import create_user, login_user
-from Models.user_model import login_user, generate_token
+from backend.Models.user_model import create_user, login_user
+from backend.Models.user_model import login_user
 auth = Blueprint("auth", __name__)
 
 @auth.route("/register", methods=["POST"])
@@ -35,11 +35,8 @@ def login():
         if "error" in user:
             return jsonify(user), 401
 
-        token = generate_token(user)
-
         return jsonify({
             "message": "Login successful",
-            "token": token,
             "user": user
         }), 200
 
