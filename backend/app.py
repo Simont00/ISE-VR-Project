@@ -1,6 +1,7 @@
 from flask import Flask
 from backend.config import Config
 from backend.database.db import db
+from flask_cors import CORS
 
 # ✅ JWT IMPORT
 from flask_jwt_extended import JWTManager
