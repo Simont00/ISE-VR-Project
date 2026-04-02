@@ -1,97 +1,62 @@
-import os
-import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
+from backend.database.db import db
 
-# 📂 DATABASE PATH SETUP (FIXED)
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT = os.path.dirname(BASE_DIR)   # backend folder
-DB_FOLDER = os.path.join(PROJECT_ROOT, "database")
+# ✅ USER MODEL (SQLAlchemy)
+class User(db.Model):
+    __tablename__ = "users"
 
-# Ensure database folder exists
-if not os.path.exists(DB_FOLDER):
-    os.makedirs(DB_FOLDER)
-
-DATABASE_NAME = os.path.join(DB_FOLDER, "database.db")
-
-
-# 🔗 GET CONNECTION
-def get_connection():
-    conn = sqlite3.connect(DATABASE_NAME)
-    conn.row_factory = sqlite3.Row
-    return conn
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
 
 
 # ✅ REGISTER USER
 def create_user(name, email, password):
-    conn = get_connection()
-    cursor = conn.cursor()
+    existing_user = User.query.filter_by(email=email).first()
+
+    if existing_user:
+        return {"error": "Email already exists"}
 
     hashed_password = generate_password_hash(password)
 
-    try:
-        cursor.execute("""
-            INSERT INTO users (name, email, password)
-            VALUES (?, ?, ?)
-        """, (name, email, hashed_password))
+    new_user = User(
+        name=name,
+        email=email,
+        password=hashed_password
+    )
 
-        conn.commit()
-        return {"message": "User registered successfully"}
+    db.session.add(new_user)
+    db.session.commit()
 
-    except sqlite3.IntegrityError:
-        return {"error": "Email already exists"}
-
-    finally:
-        conn.close()
+    return {"message": "User registered successfully"}
 
 
-# 🔍 GET USER BY EMAIL
-def get_user_by_email(email):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
-    user = cursor.fetchone()
-
-    conn.close()
-    return user
-
-
-# 🔐 LOGIN USER
+# ✅ LOGIN USER (FIXED)
 def login_user(email, password):
-    user = get_user_by_email(email)
+    user = User.query.filter_by(email=email).first()
 
-    if user is None:
+    if not user:
         return {"error": "User not found"}
 
-    if check_password_hash(user["password"], password):
-        return {
-            "message": "Login successful",
-            "user": {
-                "id": user["id"],
-                "name": user["name"],
-                "email": user["email"]
-            }
-        }
-    else:
+    if not check_password_hash(user.password, password):
         return {"error": "Invalid password"}
 
+    return {
+        "id": user.id,
+        "name": user.name,
+        "email": user.email
+    }
 
-# 📊 GET ALL USERS (FOR TESTING)
+
+# ✅ GET ALL USERS (OPTIONAL)
 def get_all_users():
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT id, name, email FROM users")
-    users = cursor.fetchall()
-
-    conn.close()
-    return [dict(user) for user in users]
-
-
-# 🚀 TEST BLOCK
-if __name__ == "__main__":
-    print("Running user_model test...\n")
-
-    print(create_user("Simon", "simon@test.com", "123456"))
-    print(login_user("simon@test.com", "123456"))
-    print(get_all_users())
+    users = User.query.all()
+    return [
+        {
+            "id": user.id,
+            "name": user.name,
+            "email": user.email
+        }
+        for user in users
+    ]
