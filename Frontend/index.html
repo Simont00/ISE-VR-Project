@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Emotion Dashboard</title>
+</head>
+<body>
+
+    <h1>Emotion Data</h1>
+
+    <button onclick="getEmotions()">Get Emotions</button>
+
+    <pre id="output"></pre>
+
+    <script>
+        async function getEmotions() {
+            const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc3NTE0OTA0NiwianRpIjoiOWE1NjAzMmUtYzA1Ny00NDI1LWFiZjEtMDg5YzQ5MjYzMmM0IiwidHlwZSI6ImFjY2VzcyIsInN1YiI6IjEiLCJuYmYiOjE3NzUxNDkwNDYsImNzcmYiOiI3NjQzODVlMS01MmM5LTRkMjktYmIwYy1mNGEyZDU5NDY0NDciLCJleHAiOjE3NzUxNDk5NDZ9.AvyrSjWWEb0QCOqMVOTKG5Js8o_FCVVG_Gn75Cj3h30"; 
+
+            const response = await fetch("https://fuzzy-guide-r49v565qw96vc54jp-5000.app.github.dev/emotion/1", {
+                method: "GET",
+                headers: {
+                    "Authorization": "Bearer " + token
+                }
+            });
+
+            const data = await response.json();
+            document.getElementById("output").innerText = JSON.stringify(data, null, 2);
+        }
+    </script>
+
+</body>
+</html>
