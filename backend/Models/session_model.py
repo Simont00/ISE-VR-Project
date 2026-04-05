@@ -1,82 +1,25 @@
-import sqlite3
-from datetime import datetime
+from backend.database.db import get_db_connection
 
-DATABASE_NAME = "backend/database/database.db"
-
-
-# -----------------------------
-# Database connection
-# -----------------------------
-def get_connection():
-    return sqlite3.connect(DATABASE_NAME)
-
-
-# -----------------------------
-# Create Session
-# -----------------------------
-def create_session(user_id, emotion_id, scenario_id, duration):
-    conn = get_connection()
+def create_session_table():
+    conn = get_db_connection()
     cursor = conn.cursor()
 
-    created_at = datetime.now()
-
     cursor.execute("""
-        INSERT INTO sessions (user_id, emotion_id, scenario_id, duration, created_at)
-        VALUES (?, ?, ?, ?, ?)
-    """, (user_id, emotion_id, scenario_id, duration, created_at))
+    CREATE TABLE IF NOT EXISTS sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+
+        start_time TEXT DEFAULT CURRENT_TIMESTAMP,
+        end_time TEXT,
+
+        duration TEXT,  -- store total session duration
+
+        is_active INTEGER DEFAULT 1,
+
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
 
     conn.commit()
     conn.close()
-
-    return {"message": "Session created successfully"}
-
-
-# -----------------------------
-# Get all sessions of a user
-# -----------------------------
-def get_sessions_by_user(user_id):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT * FROM sessions WHERE user_id = ?
-    """, (user_id,))
-
-    sessions = cursor.fetchall()
-    conn.close()
-
-    return sessions
-
-
-# -----------------------------
-# Get single session
-# -----------------------------
-def get_session_by_id(session_id):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT * FROM sessions WHERE id = ?
-    """, (session_id,))
-
-    session = cursor.fetchone()
-    conn.close()
-
-    return session
-
-
-# -----------------------------
-# Delete session
-# -----------------------------
-def delete_session(session_id):
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        DELETE FROM sessions WHERE id = ?
-    """, (session_id,))
-
-    conn.commit()
-    conn.close()
-
-    return {"message": "Session deleted successfully"}

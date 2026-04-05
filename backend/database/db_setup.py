@@ -26,17 +26,21 @@ def create_tables(conn):
     );
     """)
 
-    # 2️ EMOTIONS TABLE
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS emotions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        emotion_type TEXT NOT NULL,
-        confidence REAL,
-        detected_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users (id)
-    );
-    """)
+CREATE TABLE IF NOT EXISTS emotions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    session_id INTEGER,
+
+    emotion TEXT NOT NULL,
+    confidence REAL,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (session_id) REFERENCES sessions (id)
+);
+""")
 
     # 3️ SCENARIOS TABLE
     cursor.execute("""
@@ -49,18 +53,27 @@ def create_tables(conn):
     """)
 
     # 4️ SESSIONS TABLE
+    
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS sessions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        scenario_id INTEGER,
-        start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        end_time TIMESTAMP,
-        score INTEGER,
-        FOREIGN KEY (user_id) REFERENCES users (id),
-        FOREIGN KEY (scenario_id) REFERENCES scenarios (id)
-    );
-    """)
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    scenario_id INTEGER,
+
+    start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    end_time TIMESTAMP,
+    duration TEXT,
+
+    is_active INTEGER DEFAULT 1,
+    score INTEGER,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (user_id) REFERENCES users (id),
+    FOREIGN KEY (scenario_id) REFERENCES scenarios (id)
+);
+""")
 
     # 5️ FEEDBACK TABLE
     cursor.execute("""
