@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ISE - Live Monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+        .header { background: #2c3e50; color: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; text-align: center; }
+        .stats-container { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 250px; text-align: center; }
+        .feedback-box { font-size: 26px; font-weight: bold; color: #2980b9; padding: 30px; border: 3px dashed #3498db; border-radius: 15px; margin: 20px auto; min-height: 80px; width: 90%; }
+        .scenario-img { width: 100%; height: 300px; border-radius: 10px; object-fit: cover; border: 2px solid #ddd; }
+        .eng-bar { height: 12px; background: #eee; border-radius: 6px; overflow: hidden; margin-top: 10px; }
+        #fill { height: 100%; width: 0%; background: #27ae60; transition: 0.5s; }
+        #alert-box { display: none; background: #e74c3c; color: white; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center; font-weight: bold; }
+        .btn { padding: 10px 20px; margin: 5px; cursor: pointer; border-radius: 5px; border: none; font-weight: bold; background: #34495e; color: white; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>ISE: Interactive Skills Enhancer</h1>
+        <p id="timer">Session Duration: 00:00</p>
+    </div>
+
+    <div id="alert-box">⚠️ SENSORY INTERVENTION ACTIVE: Music Therapy Running</div>
+
+    <div class="stats-container">
+        <div class="card"><h3>Interventions</h3><h2 id="total-iv">0</h2></div>
+        <div class="card"><h3>Current Mood</h3><h2 id="curr-mood">None</h2></div>
+        <div class="card" style="width: 350px;">
+            <h3>Engagement</h3>
+            <div class="eng-bar"><div id="fill"></div></div>
+            <p id="eng-text">0%</p>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 20px; justify-content: center;">
+        <div class="card" style="width: 500px;">
+            <h3 id="env-text">Environment: Classroom</h3>
+            <img id="env-pic" src="https://images.pexels.com/photos/256417/pexels-photo-256417.jpeg" class="scenario-img">
+            <div style="margin-top: 15px;">
+                <button class="btn" onclick="changeEnv('Classroom')">Classroom</button>
+                <button class="btn" onclick="changeEnv('Playground')">Playground</button>
+            </div>
+        </div>
+
+        <div class="card" style="width: 500px;">
+            <h3>Session Analysis</h3>
+            <div id="fb-text" class="feedback-box">Waiting...</div>
+            <p id="adv-text" style="color: #e67e22; font-weight: bold;">Initialising...</p>
+            <div style="height: 250px;"><canvas id="chart"></canvas></div>
+        </div>
+    </div>
+
+    <script>
+        let start = Date.now();
+        setInterval(() => {
+            let s = Math.floor((Date.now() - start) / 1000);
+            document.getElementById('timer').innerText = `Session Duration: ${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+        }, 1000);
+
+        const ctx = document.getElementById('chart').getContext('2d');
+        let myChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: { labels: [], datasets: [{ data: [], backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF'] }] },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        function changeEnv(m) {
+            document.getElementById('env-text').innerText = "Environment: " + m;
+            document.getElementById('env-pic').src = (m === 'Classroom') 
+                ? "https://images.pexels.com/photos/256417/pexels-photo-256417.jpeg" 
+                : "https://images.pexels.com/photos/1147441/pexels-photo-1147441.jpeg";
+        }
+
+        async function refresh() {
+            try {
+                // Forced no-cache fetch
+                const r = await fetch('/api/dashboard-stats', { cache: 'no-store' });
+                const d = await r.json();
+
+                if (d.status === "success") {
+                    // Update Elements by precise IDs
+                    document.getElementById('total-iv').innerText = d.total_interventions;
+                    document.getElementById('curr-mood').innerText = d.current_emotion;
+                    document.getElementById('adv-text').innerText = d.advice;
+                    document.getElementById('fill').style.width = d.engagement_score + "%";
+                    document.getElementById('eng-text').innerText = d.engagement_score + "%";
+
+                    myChart.data.labels = Object.keys(d.chart_data);
+                    myChart.data.datasets[0].data = Object.values(d.chart_data);
+                    myChart.update();
+
+                    const fb = document.getElementById('fb-text');
+                    const ab = document.getElementById('alert-box');
+
+                    if (d.intervention_active) {
+                        ab.style.display = 'block';
+                        fb.innerHTML = "🧊 Sensory Break Active"; fb.style.color = "#e74c3c";
+                    } else {
+                        ab.style.display = 'none';
+                        fb.innerHTML = d.current_emotion === 'happy' ? "🌟 Doing Great!" : "Monitoring...";
+                        fb.style.color = "#2980b9";
+                    }
+                }
+            } catch (e) { console.log(e); }
+        }
+        setInterval(refresh, 2000);
+    </script>
+</body>
+</html>
