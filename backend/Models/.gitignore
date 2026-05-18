@@ -19,3 +19,21 @@ __pycache__/
 *.db
 venv 1/
 venv 2/
+
+__pycache__/
+*.pyc
+.venv/
+
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+node_modules/
+Frontend/node_modules/
+
+*.sqlite
+*.db
