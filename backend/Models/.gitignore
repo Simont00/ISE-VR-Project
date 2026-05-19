@@ -36,4 +36,8 @@ node_modules/
 Frontend/node_modules/
 
 *.sqlite
+<<<<<<< Updated upstream:backend/Models/.gitignore
 *.db
+=======
+*.db
+>>>>>>> Stashed changes:backend/Models/ .gitignore
