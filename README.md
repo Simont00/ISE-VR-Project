@@ -15,3 +15,24 @@ An AI-powered system designed to assist children with Autism Spectrum Disorder (
 - Real-time emotion detection (Happy, Sad, Angry, etc.)
 - Automated Music Therapy trigger based on stress threshold.
 - Live Analytics Dashboard for parents/caregivers.
+# ISE — Interactive Skills Enhancer
+
+> VR-based social skills learning platform for children with ASD & ID
+
+## Tech Stack
+- **Backend**: Python Flask, SQLite
+- **Frontend**: HTML5, CSS3, JavaScript  
+- **AI/ML**: Real-time emotion detection (OpenCV/DeepFace)
+- **VR**: A-Frame WebVR
+- **Sponsor**: NIEPMD, Ministry of Social Justice
+
+## Key Features
+- Real-time emotion recognition via webcam
+- 6 customizable VR social scenarios
+- AI-powered feedback engine
+- Parent/educator progress dashboard
+- Sensory-sensitive UI (calm sounds, soft colors)
+
+## Run Locally
+pip install -r requirement.txt
+python app.py

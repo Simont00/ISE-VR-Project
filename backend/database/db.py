@@ -1,30 +1,26 @@
+import os
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
-import sqlite3
+from sqlalchemy import func
 
-DATABASE = "database.db"
-
-def get_db_connection():
-    conn = sqlite3.connect(DATABASE)
-    conn.row_factory = sqlite3.Row
-    return conn
-
-# --- NAYA PROJECT FEATURE ---
 db = SQLAlchemy()
 
 class Progress(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.DateTime, default=datetime.utcnow)
-    emotion_label = db.Column(db.String(50))
-    # Dhyan se dekho: Iska naam 'emotion_score' hai
-    emotion_score = db.Column(db.Float) 
-    intervention = db.Column(db.String(100), default='None') 
-    interactions = db.Column(db.Integer, default=0)
+    # 🔥 Table ka naam badal kar progress_v2 kar diya, taaki lock ka jhanjhat hi khatam ho jaye
+    __tablename__ = 'progress_v2'
+    
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    session_id = db.Column(db.String(50), nullable=True)        
+    patient_name = db.Column(db.String(100), nullable=True)    
+    emotion_label = db.Column(db.String(50), nullable=False)   
+    intervention = db.Column(db.String(50), nullable=False)    
+    environment = db.Column(db.String(50), default='Classroom') 
+    timestamp = db.Column(db.DateTime, server_default=func.now()) 
 
     def __repr__(self):
         return f'<Progress {self.emotion_label}>'
 
 def init_db(app):
     with app.app_context():
+        # Bina kisi complex query ya alter ke fresh create karega
         db.create_all()
-        print("✅ Database Tables Ready!")
+        print("✅ Database Structures Version 2 Synced Successfully!")

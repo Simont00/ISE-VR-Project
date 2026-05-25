@@ -4,6 +4,43 @@ from backend.Models.scenerio_model import Scenerio
 
 scenerio_bp = Blueprint("scenerio_bp", __name__)
 
+# ── 💥 LIVE STATE ENGINE: Current environment ko track karne ke liye global variable ──
+_current_active_scenario = "Classroom"
+
+
+# ➤ SET LIVE ACTIVE ENVIRONMENT (Dashboard buttons se hit hoga)
+@scenerio_bp.route("/set-active", methods=["POST", "OPTIONS"])
+def set_active_scenerio():
+    global _current_active_scenario
+    
+    # Preflight requests (CORS safety check) bypass karne ke liye
+    if request.method == "OPTIONS":
+        return jsonify({"status": "CORS_OK"}), 200
+        
+    data = request.get_json(silent=True)
+    if not data or "scenario" not in data:
+        print("⚠️ Warning: Request received but scenario name missing!")
+        return jsonify({"status": "error", "message": "Scenario name missing"}), 400
+        
+    _current_active_scenario = str(data.get("scenario")).strip()
+    
+    print("\n" + "="*50)
+    print(f"🎯 [SCENARIO ALERT] VR Environment changed to: --> {_current_active_scenario.upper()} <--")
+    print("="*50 + "\n")
+    
+    return jsonify({"status": "success", "active_scenario": _current_active_scenario}), 200
+
+
+# Python function taaki tumhare face detection ya logging scripts isko bina API hit kiye read kar sakein
+def get_live_scenario_name():
+    global _current_active_scenario
+    return _current_active_scenario
+
+
+# =====================================================================
+# ➤ ORIGINAL CRUD ROUTES (Bilkul Safe Aur Intact)
+# =====================================================================
+
 # ➤ CREATE
 @scenerio_bp.route("/", methods=["POST"])
 def create_scenerio():
