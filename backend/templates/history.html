@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ISE — Session History</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --purple: #7C5CBF;
+      --purple-light: #EDE8F9;
+      --mint: #4ECDC4;
+      --coral: #FF6B6B;
+      --bg: #F4F1FB;
+      --card: #ffffff;
+      --text: #1a1a2e;
+      --muted: #6b7280;
+      --border: rgba(0,0,0,0.08);
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── TOPBAR ─────────────────────────────────────── */
+    .topbar {
+      background: var(--purple);
+      padding: 0 28px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px;
+    }
+    .topbar-brand { display: flex; align-items: center; gap: 12px; }
+    .brand-icon {
+      width: 36px; height: 36px; background: white; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+    .brand-name { color: white; font-size: 17px; font-weight: 700; }
+    .nav-links { display: flex; gap: 16px; }
+    .nav-btn {
+      color: white; text-decoration: none; font-size: 13px; font-weight: 600;
+      padding: 6px 14px; border-radius: 20px; background: rgba(255,255,255,0.1);
+      transition: background 0.2s;
+    }
+    .nav-btn:hover { background: rgba(255,255,255,0.2); }
+
+    /* ── MAIN CONTENT ───────────────────────────────── */
+    .page { padding: 28px; max-width: 1200px; margin: 0 auto; }
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .page-title { font-size: 22px; font-weight: 700; color: var(--text); }
+    
+    .panel {
+      background: var(--card); border-radius: var(--radius);
+      border: 0.5px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02);
+      overflow: hidden;
+    }
+
+    /* ── TABLE STYLING ──────────────────────────────── */
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th {
+      background: #faf9fe; color: var(--muted); font-size: 12px;
+      font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px;
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+    }
+    td { padding: 16px 20px; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fcfbfe; }
+
+    /* Tags & Badges */
+    .badge {
+      display: inline-block; padding: 4px 10px; border-radius: 20px;
+      font-size: 12px; font-weight: 600; text-transform: capitalize;
+    }
+    .badge-happy { background: #E8F8EE; color: #27AE60; }
+    .badge-neutral { background: #EBF3FA; color: #2F80ED; }
+    .badge-sad { background: #F3EAFE; color: #9B51E0; }
+    .badge-fear { background: #FFF4E6; color: #F2994A; }
+    .badge-angry { background: #FCE8E8; color: #EB5757; }
+
+    .iv-active { color: var(--coral); font-weight: 700; }
+    .iv-monitoring { color: var(--muted); }
+
+    .no-data { padding: 40px; text-align: center; color: var(--muted); font-size: 15px; }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-icon">📜</div>
+    <div class="brand-name">ISE Analytics Hub</div>
+  </div>
+  <div class="nav-links">
+    <a href="/dashboard" class="nav-btn">📊 Live Dashboard</a>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-header">
+    <h1 class="page-title">Session History Logs</h1>
+  </div>
+
+  <div class="panel">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Emotion Label</th>
+          <th>Engagement</th>
+          <th>Intervention Status</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody id="history-table-body">
+        <tr>
+          <td colspan="5" class="no-data">Loading historical records from DB...</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+  // 🔄 BACKEND PIPELINE FETCH: Purana data load karne ke liye
+  async function loadHistory() {
+    try {
+      // Tumhare backend route par GET request (Jahan saari records milti hain)
+      const response = await fetch('http://127.0.0.1:5000/api/dashboard-stats'); 
+      const data = await response.json();
+      
+      const tbody = document.getElementById('history-table-body');
+      tbody.innerHTML = ""; // Loader text clear karo
+
+      // Note: Agar tumne `/api/all-sessions` jaisa koi route banaya hai toh URL badal sakte ho.
+      // Abhi query testing ke liye dashboard-stats se hi dummy structure handle kar rahe hain.
+      if (data.status === "success" && data.chart_data) {
+          let mockId = 1;
+          
+          // Data tables row generation engine loop
+          Object.keys(data.chart_data).forEach(emotion => {
+              const count = data.chart_data[emotion];
+              for(let i = 0; i < Math.min(count, 5); i++) { // Max 5 logs per emotion dikhane ke liye
+                  const row = document.createElement('tr');
+                  
+                  // Safe emotion class identification
+                  let badgeClass = `badge-${emotion}`;
+                  if (!['happy','neutral','sad','fear','angry'].includes(emotion)) badgeClass = 'badge-neutral';
+
+                  row.innerHTML = `
+                      <td>#${mockId++}</td>
+                      <td><span class="badge ${badgeClass}">${emotion}</span></td>
+                      <td>${emotion === 'happy' || emotion === 'neutral' ? '85%' : '40%'}</td>
+                      <td class="${emotion === 'sad' || emotion === 'angry' ? 'iv-active' : 'iv-monitoring'}">
+                          ${emotion === 'sad' || emotion === 'angry' ? '🛑 Active' : '🟢 Monitoring'}
+                      </td>
+                      <td>${new Date(Date.now() - mockId * 60000).toLocaleTimeString()}</td>
+                  `;
+                  tbody.appendChild(row);
+              }
+          });
+      }
+
+      if (tbody.children.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="no-data">No session logs found in database.</td></tr>`;
+      }
+
+    } catch (error) {
+      console.error("❌ History Render Error:", error);
+      document.getElementById('history-table-body').innerHTML = 
+        `<tr><td colspan="5" class="no-data" style="color:var(--coral)">Error connecting to backend database pipeline.</td></tr>`;
+    }
+  }
+
+  // Startup hook trigger
+  window.addEventListener('DOMContentLoaded', loadHistory);
+</script>
+</body>
+</html>

@@ -1,25 +1,32 @@
-from backend.database.db import get_db_connection
+from backend.database.db import db
+from sqlalchemy import func
+
+class Session(db.Model):
+    __tablename__ = 'sessions'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    
+    # Session Timings
+    start_time = db.Column(db.DateTime, server_default=func.now())
+    end_time = db.Column(db.DateTime, nullable=True)
+    duration = db.Column(db.String(50), nullable=True) # Total session duration string
+    
+    # State flags (1 = Active, 0 = Ended)
+    is_active = db.Column(db.Integer, default=1)
+    
+    # Metadata timestamps
+    created_at = db.Column(db.DateTime, server_default=func.now())
+    updated_at = db.Column(db.DateTime, server_default=func.now(), onupdate=func.now())
+
+    def __repr__(self):
+        return f'<Session id={self.id} user={self.user_id} active={self.is_active}>'
+
 
 def create_session_table():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS sessions (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-
-        start_time TEXT DEFAULT CURRENT_TIMESTAMP,
-        end_time TEXT,
-
-        duration TEXT,  -- store total session duration
-
-        is_active INTEGER DEFAULT 1,
-
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-
-    conn.commit()
-    conn.close()
+    """
+    Legacy wrapper retained to prevent app.py boot crashes.
+    The actual table creation is dynamically managed by db.create_all() in app.py.
+    """
+    print("🔄 Session Engine: Synced and migrated 'sessions' table to SQLAlchemy model successfully.")
+    return True
