@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base ── */
+* { box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: #0D0B1E;
+  color: #E8E6F0;
+  margin: 0;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Custom Scrollbar ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #13102B; }
+::-webkit-scrollbar-thumb { background: #2A2456; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #7B5EA7; }
+
+/* ── Utility Classes ── */
+.font-display { font-family: 'Space Grotesk', sans-serif; }
+.font-mono    { font-family: 'JetBrains Mono', monospace; }
+
+/* ── Animated gradient background for Auth pages ── */
+.auth-bg {
+  background:
+    radial-gradient(ellipse at 15% 40%, rgba(91,79,207,0.25) 0%, transparent 55%),
+    radial-gradient(ellipse at 85% 70%, rgba(123,94,167,0.20) 0%, transparent 55%),
+    #0D0B1E;
+}
+
+/* ── Card base ── */
+.vr-card {
+  background: linear-gradient(135deg, #181535 0%, #13102B 100%);
+  border: 1px solid #2A2456;
+  border-radius: 16px;
+}
+
+/* ── Glow text ── */
+.glow-text {
+  text-shadow: 0 0 20px rgba(155, 114, 207, 0.6);
+}
+
+/* ── Progress bar fill animation ── */
+@keyframes fillBar {
+  from { width: 0%; }
+  to   { width: var(--target-width); }
+}
+.progress-fill {
+  animation: fillBar 1s ease-out forwards;
+}
+
+/* ── Pulse ring for live emotion ── */
+@keyframes ping-slow {
+  0%   { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+.ping-slow { animation: ping-slow 1.8s ease-out infinite; }
+
+/* ── Sidebar active indicator ── */
+.sidebar-item.active {
+  background: rgba(123, 94, 167, 0.18);
+  border-left: 3px solid #9B72CF;
+}
+.sidebar-item {
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
+}
+.sidebar-item:hover {
+  background: rgba(123, 94, 167, 0.10);
+}
+
+/* ── Form Input styling ── */
+.vr-input {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid #2A2456;
+  border-radius: 10px;
+  color: #E8E6F0;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+  width: 100%;
+  padding: 12px 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+}
+.vr-input::placeholder { color: #5B5780; }
+.vr-input:focus {
+  border-color: #7B5EA7;
+  box-shadow: 0 0 0 3px rgba(123,94,167,0.15);
+}
+
+/* ── Button ── */
+.vr-btn {
+  background: linear-gradient(135deg, #7B5EA7 0%, #5B4FCF 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  width: 100%;
+  letter-spacing: 0.02em;
+}
+.vr-btn:hover  { opacity: 0.92; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(123,94,167,0.4); }
+.vr-btn:active { transform: translateY(0); }
+.vr-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Stat badge ── */
+.stat-badge {
+  background: rgba(123,94,167,0.12);
+  border: 1px solid rgba(123,94,167,0.25);
+  border-radius: 10px;
+  padding: 14px 18px;
+}
+
+/* ── Session row ── */
+.session-row {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid #2A2456;
+  border-radius: 10px;
+  padding: 12px 16px;
+  transition: background 0.2s;
+}
+.session-row:hover { background: rgba(123,94,167,0.08); }

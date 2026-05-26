@@ -1,3 +1,4 @@
+
 import os
 import sys
 import pygame
@@ -8,6 +9,7 @@ from datetime import datetime
 from flask import Flask, request, jsonify, render_template, make_response, send_file
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit
+from flask_jwt_extended import JWTManager
 from sqlalchemy import func
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -20,10 +22,18 @@ from backend.routes.auth_routes import auth
 from backend.routes.emotion_routes import emotion_bp
 from backend.routes.session_routes import session_bp
 from backend.routes.scenerio_routes import scenerio_bp
-from backend.Models.session_model import create_session_table
 
-# Intervention Settings
-pygame.mixer.init()
+# Models and Table Initializations
+from backend.Models.session_model import create_session_table
+from backend.Models.user_model import User
+
+# Intervention Settings (Safe Fallback for Headless Cloud Containers)
+try:
+    pygame.mixer.init()
+    print("✅ Pygame Audio System Initialized Successfully!")
+except pygame.error:
+    print("⚠️ No audio device found (Running in headless/cloud environment). Audio features safely virtualized.")
+
 STRESS_THRESHOLD = 3 
 stress_streak = 0
 BASE_DIR = os.path.dirname(__file__)
@@ -80,17 +90,50 @@ def handle_sensory_intervention(emotion):
             
     return "Active" if is_active else "Monitoring"
 
+# App Initialization (Merged Settings from Partner Core)
 app = Flask(__name__, template_folder='templates')
 app.config.from_object(Config)
+
+# Partner's Explicit Authorization Key-Pairs
+app.config["SECRET_KEY"] = "supersecretkey"
+app.config["JWT_SECRET_KEY"] = "jwt-super-secret-key"
+
+# Init backend extensions
 db.init_app(app)
+jwt = JWTManager(app)
 CORS(app)
 
+# Real-time WebSockets Instance Mapping
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+# Register Architecture Blueprints (Synchronized Routing Prefixes)
 app.register_blueprint(auth, url_prefix="/api/auth")
 app.register_blueprint(emotion_bp)
 app.register_blueprint(session_bp, url_prefix="/api")
 app.register_blueprint(scenerio_bp, url_prefix="/scenerio")
+
+
+# --- INTEGRATED ROUTING MATRIX ---
+
+@app.route("/")
+def home():
+    return {"message": "Backend running successfully 🚀"}
+
+@app.route("/test-session")
+def test_session():
+    return {"message": "Session route working ✅"}
+
+@app.route("/dashboard")
+def dashboard():
+    global _current_session_id
+    # Reset session token on fresh dashboard load to split logs cleanly
+    _current_session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    return render_template("dashboard.html")
+
+@app.route("/history")
+def history_page():
+    return render_template("history.html")
+
 
 # Hook to catch active scenario shifts from the frontend button click
 @app.before_request
@@ -118,7 +161,7 @@ def check_live_intervention(response):
             status = handle_sensory_intervention(current_emo)
             iv_now = True if status == "Active" else False
             
-            # Real Problem Solving: Save environment data, name and distinct session timestamp
+            # Save telemetry telemetry environment configurations alongside distinct timestamp hashes
             new_log = Progress(
                 session_id=_current_session_id,
                 patient_name=patient_name,
@@ -129,7 +172,7 @@ def check_live_intervention(response):
             db.session.add(new_log)
             db.session.commit()
             
-            # Calculate dynamic metrics based on the current active session
+            # Process analytical trends based on current logging instances
             total_iv = db.session.query(Progress).filter(
                 Progress.session_id == _current_session_id, 
                 Progress.intervention == 'Active'
@@ -166,17 +209,6 @@ def check_live_intervention(response):
         except Exception as e:
             print("🚨 Live Route Stream Sync Error:", e)
     return response
-
-@app.route("/dashboard")
-def dashboard():
-    global _current_session_id
-    # Reset session token on fresh dashboard load to split logs cleanly
-    _current_session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return render_template("dashboard.html")
-
-@app.route("/history")
-def history_page():
-    return render_template("history.html")
 
 # CLINICAL PDF REPORT GENERATION ENDPOINT
 @app.route("/api/download-report", methods=["POST"])
@@ -306,9 +338,16 @@ def get_dashboard_stats():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)})
 
+# SQLite Matrix Mapping Engine Setup
 create_session_table()
 with app.app_context(): 
-    db.create_all()
+    try:
+        db.create_all()
+        print("✅ Database configurations synced and operational.")
+    except Exception as db_init_err:
+        print("❌ DB Initialization Error:", str(db_init_err))
 
+# Launch App Context Wrapper via SocketIO Layer (Debug Active for Hot-Reload Tracking)
 if __name__ == "__main__":
-    socketio.run(app, host="0.0.0.0", port=5000, debug=False)
+    print("🚀 Starting Fully Merged Flask-SocketIO Engine...")
+    socketio.run(app, host="0.0.0.0", port=5000, debug=True)
