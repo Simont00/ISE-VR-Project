@@ -1,5 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-
+/* ── Base ── */
 * { box-sizing: border-box; }
 
 body {
@@ -11,13 +14,17 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── Custom Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: #13102B; }
 ::-webkit-scrollbar-thumb { background: #2A2456; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #7B5EA7; }
 
+/* ── Utility Classes ── */
 .font-display { font-family: 'Space Grotesk', sans-serif; }
+.font-mono    { font-family: 'JetBrains Mono', monospace; }
 
+/* ── Animated gradient background for Auth pages ── */
 .auth-bg {
   background:
     radial-gradient(ellipse at 15% 40%, rgba(91,79,207,0.25) 0%, transparent 55%),
@@ -25,26 +32,35 @@ body {
     #0D0B1E;
 }
 
+/* ── Card base ── */
 .vr-card {
   background: linear-gradient(135deg, #181535 0%, #13102B 100%);
   border: 1px solid #2A2456;
   border-radius: 16px;
 }
 
-.glow-text { text-shadow: 0 0 20px rgba(155, 114, 207, 0.6); }
+/* ── Glow text ── */
+.glow-text {
+  text-shadow: 0 0 20px rgba(155, 114, 207, 0.6);
+}
 
+/* ── Progress bar fill animation ── */
 @keyframes fillBar {
   from { width: 0%; }
   to   { width: var(--target-width); }
 }
-.progress-fill { animation: fillBar 1s ease-out forwards; }
+.progress-fill {
+  animation: fillBar 1s ease-out forwards;
+}
 
+/* ── Pulse ring for live emotion ── */
 @keyframes ping-slow {
   0%   { transform: scale(1); opacity: 0.6; }
   100% { transform: scale(1.8); opacity: 0; }
 }
 .ping-slow { animation: ping-slow 1.8s ease-out infinite; }
 
+/* ── Sidebar active indicator ── */
 .sidebar-item.active {
   background: rgba(123, 94, 167, 0.18);
   border-left: 3px solid #9B72CF;
@@ -53,8 +69,11 @@ body {
   border-left: 3px solid transparent;
   transition: all 0.2s ease;
 }
-.sidebar-item:hover { background: rgba(123, 94, 167, 0.10); }
+.sidebar-item:hover {
+  background: rgba(123, 94, 167, 0.10);
+}
 
+/* ── Form Input styling ── */
 .vr-input {
   background: rgba(255,255,255,0.04);
   border: 1px solid #2A2456;
@@ -73,6 +92,7 @@ body {
   box-shadow: 0 0 0 3px rgba(123,94,167,0.15);
 }
 
+/* ── Button ── */
 .vr-btn {
   background: linear-gradient(135deg, #7B5EA7 0%, #5B4FCF 100%);
   color: white;
@@ -91,6 +111,7 @@ body {
 .vr-btn:active { transform: translateY(0); }
 .vr-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* ── Stat badge ── */
 .stat-badge {
   background: rgba(123,94,167,0.12);
   border: 1px solid rgba(123,94,167,0.25);
@@ -98,6 +119,7 @@ body {
   padding: 14px 18px;
 }
 
+/* ── Session row ── */
 .session-row {
   background: rgba(255,255,255,0.03);
   border: 1px solid #2A2456;
