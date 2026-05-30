@@ -349,5 +349,8 @@ with app.app_context():
 
 # Launch App Context Wrapper via SocketIO Layer (Debug Active for Hot-Reload Tracking)
 if __name__ == "__main__":
+<<<<<<< HEAD
     print("🚀 Starting Fully Merged Flask-SocketIO Engine...")
+=======
+>>>>>>> 341afdb (Fixed file deletion issue: Merged login system and scenarios permanently)
     socketio.run(app, host="0.0.0.0", port=5000, debug=True)
