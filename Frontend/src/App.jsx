@@ -4,6 +4,7 @@ import Dashboard from "./pages/Dashboard";
 import GreetingScenerio from "./pages/GreetingScenerio";
 import EmotionScenerio from "./pages/EmotionScenerio";
 import SocialScenerio from "./pages/SocialScenerio";
+import SessionPage from "./pages/SessionPage";
 
 export default function App() {
   return (
@@ -13,6 +14,7 @@ export default function App() {
         <Route path="/greeting" element={<GreetingScenerio />} />
         <Route path="/emotion" element={<EmotionScenerio />} />
         <Route path="/social" element={<SocialScenerio />} />
+        <Route path="/session" element={<SessionPage />} />
       </Routes>
     </BrowserRouter>
   );
