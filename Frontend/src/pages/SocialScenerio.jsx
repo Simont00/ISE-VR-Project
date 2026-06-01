@@ -1,8 +1,8 @@
-rio.jsx
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Confetti from "react-confetti";
 
+// Static Infrastructure Asset Imports
 import animeLeft from "../assets/anime-left.png";
 import animeRight from "../assets/anime-right.png";
 import bgPattern from "../assets/bg-pattern.png";
@@ -59,29 +59,37 @@ const SocialScenerio = () => {
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [message, setMessage] = useState("Read carefully before answering");
   const [sessionComplete, setSessionComplete] = useState(false);
-
   const [voice, setVoice] = useState(null);
   const [options, setOptions] = useState([]);
+  const [isMobile, setIsMobile] = useState(false);
 
   const questionData = questionBank[currentQ];
 
+  // Screen resize checker for layout safety
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   // ================= SHUFFLE OPTIONS =================
   useEffect(() => {
-    setOptions(shuffle(questionData.options));
+    if (questionData) {
+      setOptions(shuffle(questionData.options));
+    }
   }, [currentQ]);
 
-  // ================= VOICE =================
+  // ================= VOICE ENGINE =================
   useEffect(() => {
     const loadVoices = () => {
       const voices = window.speechSynthesis.getVoices();
-
       const female =
         voices.find((v) =>
           v.name.toLowerCase().includes("female") ||
           v.name.toLowerCase().includes("zira") ||
           v.name.toLowerCase().includes("samantha")
         ) || voices[0];
-
       setVoice(female);
     };
 
@@ -91,25 +99,22 @@ const SocialScenerio = () => {
 
   const speak = (text) => {
     if (!voice) return;
-
     const utter = new SpeechSynthesisUtterance(text);
     utter.voice = voice;
     utter.rate = 0.85;
     utter.pitch = 1.1;
-
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utter);
   };
 
   useEffect(() => {
-    if (!voice || sessionComplete) return;
+    if (!voice || sessionComplete || !questionData) return;
     speak(questionData.question);
-  }, [currentQ, voice]);
+  }, [currentQ, voice, sessionComplete]);
 
-  // ================= CLICK =================
+  // ================= CLICK HANDLER =================
   const handleOptionClick = (opt, index) => {
     if (selectedIndex !== null) return;
-
     setSelectedIndex(index);
 
     if (opt.isCorrect) {
@@ -118,25 +123,28 @@ const SocialScenerio = () => {
 
       setTimeout(() => {
         setSelectedIndex(null);
-
+        setHoveredIndex(null);
         if (currentQ < questionBank.length - 1) {
           setCurrentQ((p) => p + 1);
+          setMessage("Read carefully before answering");
         } else {
           setSessionComplete(true);
           speak("Session completed");
         }
-      }, 900);
+      }, 1100);
     } else {
       setMessage("Wrong Answer ❌ Try again");
       speak("Wrong answer try again");
 
       setTimeout(() => {
         setSelectedIndex(null);
-      }, 900);
+        setHoveredIndex(null);
+        setMessage("Read carefully before answering");
+      }, 1100);
     }
   };
 
-  // ================= RESTART (FIXED + CLASSIC LOOK) =================
+  // ================= RESTART EVALUATION =================
   const handleRestart = () => {
     setCurrentQ(0);
     setSelectedIndex(null);
@@ -150,33 +158,29 @@ const SocialScenerio = () => {
     const isSel = selectedIndex === i;
     const isHover = hoveredIndex === i && selectedIndex === null;
 
-    if (isSel && opt.isCorrect) return styles.green;
-    if (isSel && !opt.isCorrect) return styles.red;
-    if (isHover) return styles.hover;
-    return styles.normal;
+    if (isSel && opt.isCorrect) return { ...styles.baseOption, ...styles.green };
+    if (isSel && !opt.isCorrect) return { ...styles.baseOption, ...styles.red };
+    if (isHover) return { ...styles.baseOption, ...styles.hover };
+    return { ...styles.baseOption, ...styles.normal };
   };
 
   const progress = ((currentQ + 1) / questionBank.length) * 100;
 
-  // ================= SESSION COMPLETE =================
+  // ================= UI TERMINATION BLOCK =================
   if (sessionComplete) {
     return (
       <div style={styles.wrapper}>
-        <Confetti />
-
+        <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} />
+        <div style={styles.bg} />
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           style={styles.completeCard}
         >
-          <div style={{ fontSize: 60 }}>🎉</div>
-
-          <h1>Session Completed</h1>
-          <p>You completed Social Scenario Practice</p>
-
-          <div style={{ fontSize: 26, margin: "10px 0" }}>⭐⭐⭐⭐⭐</div>
-
-          {/* CLASSIC RESTART BUTTON */}
+          <div style={{ fontSize: 60, marginBottom: 10 }}>🎉</div>
+          <h1 style={{ fontSize: "24px", color: "#1e1b4b", fontWeight: "700" }}>Session Completed</h1>
+          <p style={{ color: "#4b5563", margin: "8px 0 16px 0" }}>You completed Social Scenario Practice successfully!</p>
+          <div style={{ fontSize: 26, margin: "10px 0 20px 0" }}>⭐⭐⭐⭐⭐</div>
           <button onClick={handleRestart} style={styles.restartBtn}>
             🔄 Restart Practice
           </button>
@@ -185,37 +189,41 @@ const SocialScenerio = () => {
     );
   }
 
-  // ================= MAIN UI =================
   return (
     <div style={styles.wrapper}>
       <div style={styles.bg} />
 
-      <img src={animeLeft} style={styles.left} />
-      <img src={animeRight} style={styles.right} />
+      {!isMobile && <img src={animeLeft} style={styles.left} alt="" />}
+      {!isMobile && <img src={animeRight} style={styles.right} alt="" />}
 
-      <motion.div style={styles.card} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-
+      <motion.div style={{ ...styles.card, width: isMobile ? "92%" : "720px" }} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        
+        {/* HEADER SYSTEM */}
         <div style={styles.header}>
-          <img src={teacher} style={styles.teacher} />
+          <img src={teacher} style={styles.teacher} alt="" />
           <div>
-            <h3>Social Scenerio</h3>
-            <p>{message}</p>
+            <h3 style={{ margin: 0, fontWeight: "700", color: "#1e1b4b", fontSize: "16px" }}>Social Cognitive Scenario</h3>
+            <p style={{ margin: "2px 0 0 0", fontSize: "13px", color: "#4f46e5", fontWeight: "500" }}>{message}</p>
           </div>
         </div>
 
+        {/* METRIC MATRIX PROGRESS */}
         <div style={styles.bar}>
           <div style={{ ...styles.fill, width: `${progress}%` }} />
         </div>
 
-        <h2 style={{ textAlign: "center" }}>{questionData.question}</h2>
+        <h2 style={{ textAlign: "center", fontSize: "20px", color: "#111827", margin: "24px 0", fontWeight: "600" }}>
+          {questionData?.question}
+        </h2>
 
-        <div style={styles.grid}>
+        {/* INTERACTIVE OPTIONS GRID */}
+        <div style={{ ...styles.grid, gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr" }}>
           {options.map((opt, i) => (
             <div
               key={i}
               style={getStyle(opt, i)}
               onClick={() => handleOptionClick(opt, i)}
-              onMouseEnter={() => setHoveredIndex(i)}
+              onMouseEnter={() => selectedIndex === null && setHoveredIndex(i)}
               onMouseLeave={() => setHoveredIndex(null)}
             >
               {opt.text}
@@ -228,118 +236,124 @@ const SocialScenerio = () => {
   );
 };
 
-// ================= PREMIUM STYLES =================
+// ================= PREMIUM STYLE MATRIX =================
 const styles = {
   wrapper: {
     minHeight: "100vh",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    background: "linear-gradient(135deg,#c7d2fe,#fbcfe8,#ddd6fe)",
+    background: "linear-gradient(135deg, #c7d2fe, #fbcfe8, #ddd6fe)",
     position: "relative",
+    overflow: "hidden",
+    padding: "16px",
   },
-
   bg: {
     position: "absolute",
     inset: 0,
     backgroundImage: `url(${bgPattern})`,
+    backgroundRepeat: "repeat",
     opacity: 0.15,
+    zIndex: 1,
   },
-
   card: {
-    width: "760px",
-    background: "rgba(255,255,255,0.85)",
-    backdropFilter: "blur(22px)",
-    padding: 28,
-    borderRadius: 24,
+    background: "rgba(255, 255, 255, 0.8)",
+    backdropFilter: "blur(20px)",
+    WebkitBackdropFilter: "blur(20px)",
+    padding: "28px",
+    borderRadius: "24px",
     zIndex: 2,
-    boxShadow: "0 20px 50px rgba(0,0,0,0.15)",
+    boxShadow: "0 20px 50px rgba(0, 0, 0, 0.1)",
+    border: "1px solid rgba(255, 255, 255, 0.4)",
   },
-
   header: {
     display: "flex",
-    gap: 12,
+    gap: "14px",
     alignItems: "center",
   },
-
-  teacher: { width: 52 },
-
+  teacher: { 
+    width: "48px", 
+    height: "48px", 
+    borderRadius: "12px",
+    objectFit: "cover" 
+  },
   grid: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 12,
-    marginTop: 20,
+    gap: "12px",
+    marginTop: "20px",
   },
-
   bar: {
-    height: 8,
+    height: "8px",
     background: "#e5e7eb",
-    borderRadius: 20,
-    margin: "12px 0",
+    borderRadius: "20px",
+    margin: "16px 0",
+    overflow: "hidden",
   },
-
   fill: {
     height: "100%",
-    background: "linear-gradient(to right,#6366f1,#ec4899)",
-    borderRadius: 20,
+    background: "linear-gradient(to right, #6366f1, #ec4899)",
+    borderRadius: "20px",
+    transition: "width 0.3s ease",
   },
-
+  baseOption: {
+    padding: "16px",
+    borderRadius: "14px",
+    fontSize: "15px",
+    fontWeight: "500",
+    transition: "all 0.15s ease",
+    userSelect: "none",
+  },
   normal: {
-    padding: 16,
-    background: "#fff",
-    borderRadius: 14,
+    background: "#ffffff",
     border: "1px solid #e5e7eb",
+    color: "#1f2937",
     cursor: "pointer",
-    transition: "0.2s",
   },
-
   hover: {
-    padding: 16,
     background: "#eff6ff",
-    borderRadius: 14,
     border: "1px solid #60a5fa",
     color: "#1d4ed8",
-    transform: "scale(1.03)",
+    transform: "scale(1.02)",
     cursor: "pointer",
   },
-
   green: {
-    padding: 16,
     background: "#dcfce7",
-    borderRadius: 14,
     border: "2px solid #22c55e",
     color: "#166534",
     fontWeight: "600",
+    cursor: "default",
   },
-
   red: {
-    padding: 16,
     background: "#fee2e2",
-    borderRadius: 14,
     border: "2px solid #ef4444",
     color: "#991b1b",
     fontWeight: "600",
+    cursor: "default",
   },
-
   completeCard: {
-    background: "rgba(255,255,255,0.95)",
-    padding: 45,
-    borderRadius: 26,
+    background: "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(16px)",
+    padding: "40px",
+    borderRadius: "24px",
     textAlign: "center",
-    boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+    boxShadow: "0 20px 60px rgba(0, 0, 0, 0.15)",
+    maxWidth: "400px",
+    width: "100%",
+    zIndex: 5,
   },
-
   restartBtn: {
-    marginTop: 15,
-    padding: "12px 22px",
-    borderRadius: 14,
+    padding: "12px 24px",
+    borderRadius: "12px",
     border: "none",
-    background: "linear-gradient(to right,#4f46e5,#ec4899)",
+    background: "linear-gradient(to right, #4f46e5, #ec4899)",
     color: "white",
     fontWeight: "600",
     cursor: "pointer",
+    fontSize: "15px",
+    boxShadow: "0 4px 12px rgba(79, 70, 229, 0.3)",
   },
-
-  left: { position: "absolute", left: 0, width: 180 },
-  right: { position: "absolute", right: 0, width: 180 },
+  left: { position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", width: "160px", zIndex: 2 },
+  right: { position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", width: "160px", zIndex: 2 },
 };
+
+export default SocialScenerio;
