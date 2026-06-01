@@ -9,9 +9,8 @@ auth = Blueprint("auth", __name__)
 def register():
     try:
         data = request.get_json()
-
-        name = data.get("name")
-        email = data.get("email")
+        name     = data.get("name")
+        email    = data.get("email")
         password = data.get("password")
 
         if not name or not email or not password:
@@ -19,7 +18,21 @@ def register():
 
         result = create_user(name, email, password)
 
-        return jsonify(result), 201
+        if "error" in result:
+            return jsonify(result), 400
+
+        # ✅ Token bhi return karo
+        user = User.query.filter_by(email=email).first()
+        access_token = create_access_token(identity=str(user.id))
+
+        return jsonify({
+            "token": access_token,
+            "user": {
+                "id": user.id,
+                "name": user.name,
+                "email": user.email
+            }
+        }), 201
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
