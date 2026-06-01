@@ -1,6 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./index.html", "./src/**/*.{js,jsx}"],
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}", // 👈 Maine ts aur tsx bhi jor diya aur path clear kiya
+    "./src/Components/**/*.{js,jsx}", // 👈 Special capital Components folder ke liye explicit path
+    "./src/pages/**/*.{js,jsx}"
+  ],
   theme: {
     extend: {
       colors: {

@@ -1,8 +1,10 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
+// ── 🔮 ADDED SCENARIOS HERE IN THE MENU MATRIX ──
 const NAV = [
   { to: '/dashboard', label: 'Dashboard', icon: DashIcon },
+  { to: '/scenarios', label: 'Scenarios', icon: ScenariosIcon }, // 👈 Yeh naya option add kar diya hai
   { to: '/sessions',  label: 'Sessions',  icon: SessionIcon },
   { to: '/reports',   label: 'Reports',   icon: ReportIcon },
   { to: '/profile',   label: 'Profile',   icon: ProfileIcon },
@@ -103,6 +105,15 @@ function DashIcon() {
       <rect x="14" y="3" width="7" height="7" rx="1.5"/>
       <rect x="3" y="14" width="7" height="7" rx="1.5"/>
       <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+    </svg>
+  )
+}
+// New Futuristic Crystal Ball Icon for Scenarios Section
+function ScenariosIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/>
+      <path d="M12 6v12M6 12h12"/>
     </svg>
   )
 }

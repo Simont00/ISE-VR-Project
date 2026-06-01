@@ -11,7 +11,7 @@ export function AuthProvider({ children }) {
     const token = localStorage.getItem('ise_token')
     if (token) {
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      api.get('/api/auth/profile')          // ✅ /profile
+      api.get('/api/profile')          // ✅ /profile
         .then(res => setUser(res.data))
         .catch(() => logout())
         .finally(() => setLoading(false))

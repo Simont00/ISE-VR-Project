@@ -2,191 +2,196 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { useAuth } from '../context/AuthContext'
-import { getSessions } from '../services/api'
 
-const EMOTION_COLORS = { Happy: '#2EC4B6', Neutral: '#FF9F1C', Stressed: '#E84855' }
+const EMOTION_COLORS = { happy: '#2EC4B6', neutral: '#FF9F1C', sad: '#E84855', fear: '#3A86FF', angry: '#FF006E' }
 
-// Fallback data if API not ready
-const DEMO_SESSIONS = [
-  { id: 1, scenario: 'Interview Simulation', date: 'May 15, 2024', duration: '6h 45m', score: 82 },
-  { id: 2, scenario: 'Public Speaking',      date: 'May 14, 2024', duration: '8h 30m', score: 74 },
-  { id: 3, scenario: 'Team Collaboration',   date: 'May 12, 2024', duration: '6h 0m',  score: 80 },
+const VR_SCENARIOS = [
+  { id: 'greeting', title: 'Greeting Practice', description: 'Practice formal and informal social greetings in immersive VR.', icon: '🤝', color: '#7B5EA7' },
+  { id: 'learning', title: 'Learning Practice', description: 'Interactive cognitive development module with adaptive tasks.', icon: '🧠', color: '#5B4FCF' },
+  { id: 'emotion', title: 'Emotion Recognition', description: 'Identify facial expressions and behaviors in live environments.', icon: '🎭', color: '#2EC4B6' }
 ]
-const DEMO_EMOTIONS = [
-  { name: 'Happy',   value: 60 },
-  { name: 'Neutral', value: 25 },
-  { name: 'Stressed',value: 15 },
-]
-const DEMO_STATS = {
-  totalSessions: 12,
-  totalTime: '8h 45m',
-  avgPerformance: 78,
-  currentStreak: 5,
-}
 
 export default function Dashboard() {
-  const { user }           = useAuth()
-  const navigate           = useNavigate()
-  const [sessions, setSessions] = useState(DEMO_SESSIONS)
-  const [stats, setStats]       = useState(DEMO_STATS)
-  const [emotions, setEmotions] = useState(DEMO_EMOTIONS)
-  const [loading, setLoading]   = useState(true)
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  
+  const [liveEmotion, setLiveEmotion] = useState('Detecting...')
+  const [liveAdvice, setLiveAdvice] = useState('Waiting for telemetry matrix...')
+  const [engagementScore, setEngagementScore] = useState(60)
+  const [totalInterventions, setTotalInterventions] = useState(0)
+  const [interventionActive, setInterventionActive] = useState(false)
+  const [chartData, setChartData] = useState([
+    { name: 'happy', value: 1 },
+    { name: 'neutral', value: 2 },
+    { name: 'sad', value: 0 }
+  ])
 
+  // Live Telemetry Sync Pipeline
   useEffect(() => {
-    getSessions()
-      .then(res => {
-        const data = res.data
-        if (data.sessions) setSessions(data.sessions.slice(0, 3))
-        if (data.stats)    setStats(data.stats)
-        if (data.emotions) setEmotions(data.emotions)
-      })
-      .catch(() => {/* use demo data */})
-      .finally(() => setLoading(false))
+    const fetchLiveStats = async () => {
+      try {
+        const response = await fetch('/api/dashboard-stats')
+        if (!response.ok) return;
+        const data = await response.json()
+
+        if (data && data.status === 'success') {
+          setLiveEmotion(data.current_emotion || 'neutral')
+          setEngagementScore(data.engagement_score || 60)
+          setTotalInterventions(data.total_interventions || 0)
+          setInterventionActive(data.intervention_active || false)
+          setLiveAdvice(data.advice || 'Monitoring...')
+
+          if (data.intervention_active) {
+            let audio = new Audio('/static/calm_sound.mp3')
+            audio.play().catch(err => console.log("Audio block:", err))
+          }
+
+          if (data.chart_data) {
+            const formattedChart = Object.keys(data.chart_data).map(key => ({
+              name: key,
+              value: data.chart_data[key]
+            }))
+            setChartData(formattedChart)
+          }
+        }
+      } catch (error) {
+        console.log("Dashboard live sync error:", error)
+      }
+    }
+
+    fetchLiveStats()
+    const interval = setInterval(fetchLiveStats, 2000)
+    return () => clearInterval(interval)
   }, [])
 
+  // 🎯 SMART PARAMETER ROUTING FOR EXPERIMENTS
+ // 🎯 ROUTING CLICKS TO DEDICATED SCENARIOS PAGE
+ // 🎯 CONNECTING INTERACTIVE CARDS TO RESTORED PARTNER PACKAGES
+  const handleScenarioClick = (scenId) => {
+    console.log(`Launching live interactive block: ${scenId}`);
+    
+    if (scenId === 'greeting') {
+      navigate('/greeting-scenerio');
+    } else if (scenId === 'emotion') {
+      navigate('/emotion-scenerio');
+    } else if (scenId === 'learning' || scenId === 'social') {
+      navigate('/social-scenerio');
+    }
+  };
   const firstName = user?.name?.split(' ')[0] || 'User'
 
   return (
-    <div className="flex-1 overflow-auto p-6" style={{ background: '#0D0B1E' }}>
+    <div className="flex-1 overflow-auto p-6" style={{ background: '#0D0B1E', minHeight: '100vh' }}>
       <div className="max-w-5xl mx-auto">
 
-        {/* ── Header ── */}
+        {/* Header */}
         <div className="flex items-start justify-between mb-6">
           <div>
             <h1 className="font-display font-bold text-2xl" style={{ color: '#E8E6F0' }}>
               Welcome, {firstName}!
             </h1>
             <p className="text-sm mt-1" style={{ color: '#8B87A8' }}>
-              Track your progress and improve every day.
+              Real-time VR Telemetry Monitoring System Active.
             </p>
           </div>
-          <button
-            onClick={() => navigate('/sessions')}
-            className="vr-btn px-5"
-            style={{ width: 'auto' }}
-          >
-            + Start VR Session
+          <button onClick={() => navigate('/sessions')} className="vr-btn px-5" style={{ width: 'auto' }}>
+            + View Full Sessions
           </button>
         </div>
 
-        {/* ── Stat Cards Row ── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <StatCard icon="🎮" label="Total Sessions" value={stats.totalSessions} color="#7B5EA7" />
-          <StatCard icon="⏱️" label="Total Time"     value={stats.totalTime}     color="#5B4FCF" />
-          <StatCard icon="📈" label="Avg Performance" value={`${stats.avgPerformance}%`} color="#2EC4B6" />
-          <StatCard icon="🔥" label="Current Streak"  value={`${stats.currentStreak} Days`} color="#FF9F1C" />
-        </div>
-
-        {/* ── Bottom Row: Sessions + Emotion Overview ── */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-          {/* Recent Sessions (2/3 width) */}
-          <div className="md:col-span-2 vr-card p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-display font-semibold text-base" style={{ color: '#E8E6F0' }}>
-                Recent Sessions
-              </h2>
-              <button className="text-xs hover:underline" style={{ color: '#9B72CF' }}
-                      onClick={() => navigate('/sessions')}>
-                View All →
-              </button>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              {sessions.map(s => (
-                <div key={s.id} className="session-row flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                         style={{ background: 'rgba(123,94,167,0.2)' }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9B72CF" strokeWidth="1.8">
-                        <path d="M2 9C2 7.9 2.9 7 4 7H20C21.1 7 22 7.9 22 9V17C22 18.1 21.1 19 20 19H4C2.9 19 2 18.1 2 17V9Z"/>
-                        <circle cx="8.5" cy="13" r="2"/><circle cx="15.5" cy="13" r="2"/>
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: '#E8E6F0' }}>{s.scenario}</p>
-                      <p className="text-xs" style={{ color: '#8B87A8' }}>{s.date} · {s.duration}</p>
-                    </div>
-                  </div>
-                  <ScoreBadge score={s.score} />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Emotion Overview (1/3 width) */}
-          <div className="vr-card p-5 flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-display font-semibold text-base" style={{ color: '#E8E6F0' }}>
-                Emotion Overview
-              </h2>
-              <span className="text-xs px-2 py-0.5 rounded-full"
-                    style={{ background: 'rgba(123,94,167,0.2)', color: '#9B72CF' }}>
-                This Week
+        {/* Live Tracking Status */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="vr-card p-5" style={{ background: '#141226', border: interventionActive ? '1px solid #E84855' : '1px solid #231E47', borderRadius: '16px' }}>
+            <h3 className="text-xs font-semibold mb-2" style={{ color: '#8B87A8' }}>LIVE EMOTION TRACKER</h3>
+            <div className="flex items-baseline gap-3">
+              <span id="emotion-display" className="text-3xl font-display font-bold uppercase tracking-wider" style={{ color: interventionActive ? '#E84855' : '#2EC4B6' }}>
+                {liveEmotion}
               </span>
-            </div>
-
-            {/* Donut chart */}
-            <div className="flex-1 flex items-center justify-center my-2">
-              <ResponsiveContainer width="100%" height={140}>
-                <PieChart>
-                  <Pie data={emotions} cx="50%" cy="50%" innerRadius={40} outerRadius={60}
-                       dataKey="value" strokeWidth={0}>
-                    {emotions.map((e, i) => (
-                      <Cell key={i} fill={EMOTION_COLORS[e.name]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(v) => `${v}%`}
-                           contentStyle={{ background: '#181535', border: '1px solid #2A2456',
-                                           borderRadius: 8, color: '#E8E6F0', fontSize: 12 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Legend */}
-            <div className="flex flex-col gap-2">
-              {emotions.map(e => (
-                <div key={e.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full"
-                         style={{ background: EMOTION_COLORS[e.name] }} />
-                    <span className="text-xs" style={{ color: '#8B87A8' }}>{e.name}</span>
-                  </div>
-                  <span className="text-xs font-semibold" style={{ color: '#E8E6F0' }}>
-                    {e.value}%
-                  </span>
-                </div>
-              ))}
+              {interventionActive && <span className="text-xs font-bold animate-pulse" style={{ color: '#E84855' }}>⚠️ BREAK TRIGGERED</span>}
             </div>
           </div>
 
+          <div className="vr-card p-5" style={{ background: '#141226', border: '1px solid #231E47', borderRadius: '16px' }}>
+            <h3 className="text-xs font-semibold mb-2" style={{ color: '#8B87A8' }}>AI ANALYSIS & RECOMMENDATION</h3>
+            <p className="text-sm font-medium" style={{ color: '#E8E6F0' }}>
+              {interventionActive ? "⚠️ Sensory Break Active: Playing calm_sound.mp3" : liveAdvice}
+            </p>
+          </div>
         </div>
+
+        {/* Core VR Practice Modules Grid */}
+        <div className="mb-6">
+          <h2 className="font-display font-semibold text-base mb-4" style={{ color: '#E8E6F0' }}>
+            🔮 Core VR Practice Modules
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {VR_SCENARIOS.map((scen) => (
+              <div 
+                key={scen.id} 
+                className="vr-card p-4 flex flex-col justify-between cursor-pointer hover:border-[#9B72CF] transition-all transform hover:-translate-y-0.5"
+                style={{ background: '#141226', border: '1px solid #231E47', borderRadius: '12px' }}
+                onClick={() => handleScenarioClick(scen.id)}
+              >
+                <div>
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center mb-3 text-xl" style={{ background: `${scen.color}22` }}>
+                    {scen.icon}
+                  </div>
+                  <h3 className="font-display font-bold text-sm mb-1" style={{ color: '#E8E6F0' }}>{scen.title}</h3>
+                  <p className="text-xs" style={{ color: '#8B87A8', lineHeight: '1.4' }}>{scen.description}</p>
+                </div>
+                <div className="mt-3 pt-2 flex items-center justify-between border-t border-[#231E47] text-xs">
+                  <span style={{ color: scen.color }}>Ready</span>
+                  <span style={{ color: '#9B72CF' }}>Open Module →</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <StatCard icon="📊" label="Live Engagement" value={`${engagementScore}%`} color="#2EC4B6" />
+          <StatCard icon="🚨" label="Total Interventions" value={totalInterventions} color="#E84855" />
+          <StatCard icon="⏱️" label="Session Timer" value="Live Syncing" color="#5B4FCF" />
+          <StatCard icon="🔥" label="Active Pipeline" value="Operational" color="#FF9F1C" />
+        </div>
+
+        {/* Chart */}
+        <div className="vr-card p-5 flex flex-col md:w-1/2 mx-auto">
+          <h2 className="font-display font-semibold text-sm mb-3" style={{ color: '#E8E6F0' }}>Real-time Emotion Distribution</h2>
+          <div className="flex items-center justify-center my-2">
+            <ResponsiveContainer width="100%" height={140}>
+              <PieChart>
+                <Pie data={chartData} cx="50%" cy="50%" innerRadius={40} outerRadius={60} dataKey="value" strokeWidth={0}>
+                  {chartData.map((e, i) => (
+                    <Cell key={i} fill={EMOTION_COLORS[e.name.toLowerCase()] || '#FF9F1C'} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={{ background: '#181535', border: '1px solid #2A2456', borderRadius: 8, color: '#E8E6F0', fontSize: 12 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="grid grid-cols-3 gap-2 mt-2 text-center">
+            {chartData.map(e => (
+              <div key={e.name} className="text-xs">
+                <span className="capitalize block font-semibold" style={{ color: EMOTION_COLORS[e.name.toLowerCase()] }}>{e.name}</span>
+                <span style={{ color: '#E8E6F0' }}>{e.value} hits</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
       </div>
     </div>
   )
 }
-
-// ── Sub-components ──
 
 function StatCard({ icon, label, value, color }) {
   return (
-    <div className="vr-card p-4">
-      <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3 text-lg"
-           style={{ background: `${color}22` }}>
-        {icon}
-      </div>
-      <p className="text-xs mb-1" style={{ color: '#8B87A8' }}>{label}</p>
-      <p className="font-display font-bold text-xl" style={{ color: '#E8E6F0' }}>{value}</p>
-    </div>
-  )
-}
-
-function ScoreBadge({ score }) {
-  const color = score >= 80 ? '#2EC4B6' : score >= 60 ? '#FF9F1C' : '#E84855'
-  return (
-    <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0"
-         style={{ background: `${color}22`, border: `2px solid ${color}55` }}>
-      <span className="text-xs font-bold font-mono" style={{ color }}>{score}</span>
+    <div className="vr-card p-4" style={{ background: '#141226', border: '1px solid #231E47', borderRadius: '12px' }}>
+      <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-2 text-base" style={{ background: `${color}22` }}>{icon}</div>
+      <p className="text-xs mb-0.5" style={{ color: '#8B87A8' }}>{label}</p>
+      <p className="font-display font-bold text-lg" style={{ color: '#E8E6F0' }}>{value}</p>
     </div>
   )
 }

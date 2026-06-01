@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { loginUser } from '../services/api' // 👈 Seedhe API service import ki
 
 export default function Login() {
   const [form, setForm]       = useState({ email: '', password: '' })
   const [error, setError]     = useState('')
   const [loading, setLoading] = useState(false)
-  const { login }             = useAuth()
   const navigate              = useNavigate()
 
   function handle(e) {
@@ -22,8 +21,16 @@ export default function Login() {
     }
     setLoading(true)
     try {
-      await login(form.email, form.password)
-      navigate('/dashboard')
+      // 🚀 Direct call to the working 5000 URL wrapper
+      const response = await loginUser({ email: form.email, password: form.password })
+      
+      if (response.data?.token) {
+        localStorage.setItem('ise_token', response.data.token)
+        localStorage.setItem('user_name', response.data.user?.name || '')
+        navigate('/dashboard')
+      } else {
+        setError('Token generation mismatch. Try again.')
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Invalid credentials. Please try again.')
     } finally {
@@ -33,8 +40,6 @@ export default function Login() {
 
   return (
     <div className="auth-bg min-h-screen flex items-center justify-center px-4">
-
-      {/* Decorative orbs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute rounded-full opacity-20 blur-3xl"
              style={{ width: 400, height: 400, top: '10%', left: '-5%',
@@ -45,11 +50,7 @@ export default function Login() {
       </div>
 
       <div className="relative w-full max-w-md">
-
-        {/* ── Card ── */}
         <div className="vr-card p-8 shadow-card">
-
-          {/* Logo */}
           <div className="flex flex-col items-center mb-8">
             <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
                  style={{ background: 'linear-gradient(135deg, #7B5EA7, #5B4FCF)',
@@ -76,10 +77,7 @@ export default function Login() {
             Login to continue your journey
           </p>
 
-          {/* ── Form ── */}
           <form onSubmit={submit} className="flex flex-col gap-4">
-
-            {/* Email */}
             <div>
               <label className="text-xs font-medium mb-1.5 block" style={{ color: '#8B87A8' }}>
                 Email
@@ -95,7 +93,6 @@ export default function Login() {
               />
             </div>
 
-            {/* Password */}
             <div>
               <div className="flex justify-between items-center mb-1.5">
                 <label className="text-xs font-medium" style={{ color: '#8B87A8' }}>Password</label>
@@ -114,7 +111,6 @@ export default function Login() {
               />
             </div>
 
-            {/* Error */}
             {error && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
                    style={{ background: 'rgba(232,72,85,0.1)', border: '1px solid rgba(232,72,85,0.3)',
@@ -127,7 +123,6 @@ export default function Login() {
               </div>
             )}
 
-            {/* Submit */}
             <button type="submit" className="vr-btn mt-2" disabled={loading}>
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -141,7 +136,6 @@ export default function Login() {
             </button>
           </form>
 
-          {/* Register link */}
           <p className="text-center text-sm mt-5" style={{ color: '#8B87A8' }}>
             Don't have an account?{' '}
             <Link to="/register" className="font-semibold hover:underline" style={{ color: '#9B72CF' }}>

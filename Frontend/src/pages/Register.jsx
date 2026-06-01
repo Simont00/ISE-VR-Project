@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { registerUser } from '../services/api' // 👈 Direct register target route wrapper
 
 export default function Register() {
   const [form, setForm]       = useState({ name: '', email: '', password: '', confirm: '' })
   const [error, setError]     = useState('')
   const [loading, setLoading] = useState(false)
-  const { register }          = useAuth()
   const navigate              = useNavigate()
 
   function handle(e) {
@@ -30,8 +29,20 @@ export default function Register() {
     }
     setLoading(true)
     try {
-      await register(form.name, form.email, form.password)
-      navigate('/dashboard')
+      // 🚀 Submitting payload architecture directly to backend /api/register
+      const response = await registerUser({
+        name: form.name,
+        email: form.email,
+        password: form.password
+      })
+
+      if (response.data?.token) {
+        localStorage.setItem('ise_token', response.data.token)
+        localStorage.setItem('user_name', response.data.user?.name || '')
+        navigate('/dashboard')
+      } else {
+        setError('Account created, please proceed to manually login.')
+      }
     } catch (err) {
       setError(err.response?.data?.error || 'Registration failed. Please try again.')
     } finally {
@@ -41,8 +52,6 @@ export default function Register() {
 
   return (
     <div className="auth-bg min-h-screen flex items-center justify-center px-4 py-8">
-
-      {/* Decorative orbs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute rounded-full opacity-20 blur-3xl"
              style={{ width: 400, height: 400, top: '10%', right: '-5%',
@@ -54,8 +63,6 @@ export default function Register() {
 
       <div className="relative w-full max-w-md">
         <div className="vr-card p-8 shadow-card">
-
-          {/* Logo */}
           <div className="flex flex-col items-center mb-6">
             <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-3"
                  style={{ background: 'linear-gradient(135deg, #7B5EA7, #5B4FCF)',
@@ -78,36 +85,30 @@ export default function Register() {
           </p>
 
           <form onSubmit={submit} className="flex flex-col gap-4">
-
-            {/* Full Name */}
             <div>
               <label className="text-xs font-medium mb-1.5 block" style={{ color: '#8B87A8' }}>Full Name</label>
               <input type="text" name="name" placeholder="Alex Johnson"
                      value={form.name} onChange={handle} className="vr-input" autoComplete="name" />
             </div>
 
-            {/* Email */}
             <div>
               <label className="text-xs font-medium mb-1.5 block" style={{ color: '#8B87A8' }}>Email</label>
               <input type="email" name="email" placeholder="example@email.com"
                      value={form.email} onChange={handle} className="vr-input" autoComplete="email" />
             </div>
 
-            {/* Password */}
             <div>
               <label className="text-xs font-medium mb-1.5 block" style={{ color: '#8B87A8' }}>Password</label>
               <input type="password" name="password" placeholder="Min 6 characters"
                      value={form.password} onChange={handle} className="vr-input" autoComplete="new-password" />
             </div>
 
-            {/* Confirm Password */}
             <div>
               <label className="text-xs font-medium mb-1.5 block" style={{ color: '#8B87A8' }}>Confirm Password</label>
               <input type="password" name="confirm" placeholder="Repeat password"
                      value={form.confirm} onChange={handle} className="vr-input" autoComplete="new-password" />
             </div>
 
-            {/* Password strength indicator */}
             {form.password && (
               <div>
                 <div className="flex gap-1 mb-1">
@@ -124,7 +125,6 @@ export default function Register() {
               </div>
             )}
 
-            {/* Error */}
             {error && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
                    style={{ background: 'rgba(232,72,85,0.1)', border: '1px solid rgba(232,72,85,0.3)', color: '#F08090' }}>
