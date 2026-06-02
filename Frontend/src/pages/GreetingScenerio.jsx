@@ -1,80 +1,73 @@
 import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import Confetti from "react-confetti";
 
-// Assets Import
-import animeLeft from "../assets/anime-left.png";
+import animeLeft  from "../assets/anime-left.png";
 import animeRight from "../assets/anime-right.png";
-import bgPattern from "../assets/bg-pattern.png";
-import teacher from "../assets/teacher.png";
 
-// Utils & Data Centralized Layer
 import { questionBank } from "../data/questions";
-import { calculateProgress, validateAnswer } from "../utils/learningEngine";
-import { getFemaleVoice, speakText } from "../utils/voice";
+import { calculateProgress } from "../utils/learningEngine";
+
+const speak = (text, soundOn) => {
+  if (!soundOn || typeof speechSynthesis === "undefined") return;
+  speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.rate = 0.88; utter.pitch = 1.2;
+  const voices = speechSynthesis.getVoices();
+  const female = voices.find(v => /samantha|zira|google uk.*female|female/i.test(v.name))
+    || voices.find(v => v.lang === "en-US") || voices[0];
+  if (female) utter.voice = female;
+  speechSynthesis.speak(utter);
+};
 
 const GreetingScenerio = () => {
-  // Filter only greeting types from the central data store
-  const greetingQuestions = questionBank.filter(
-    (q) => q.category === "greeting" || !q.category || q.id <= 5
-  );
+  const navigate = useNavigate();
+  const greetingQuestions = questionBank.filter((q) => q.category === "greeting" || !q.category || q.id <= 5);
 
-  const [currentQ, setCurrentQ] = useState(0);
-  const [selectedIndex, setSelectedIndex] = useState(null);
-  const [hoveredIndex, setHoveredIndex] = useState(null);
-  const [message, setMessage] = useState("Read carefully before answering.");
-  const [soundOn, setSoundOn] = useState(true);
-  const [voice, setVoice] = useState(null);
+  const [currentQ, setCurrentQ]               = useState(0);
+  const [selectedIndex, setSelectedIndex]     = useState(null);
+  const [message, setMessage]                 = useState("Read carefully before answering.");
+  const [soundOn, setSoundOn]                 = useState(true);
   const [sessionComplete, setSessionComplete] = useState(false);
-  const [restarting, setRestarting] = useState(false);
+  const [score, setScore]                     = useState(0);
 
   const questionData = greetingQuestions[currentQ];
+  const progress = calculateProgress(currentQ, greetingQuestions.length);
 
-  // Voice Engine Sync
   useEffect(() => {
-    const initVoice = () => {
-      const femaleVoice = getFemaleVoice();
-      setVoice(femaleVoice);
-    };
-    initVoice();
-    if (typeof speechSynthesis !== "undefined") {
-      speechSynthesis.onvoiceschanged = initVoice;
-    }
+    if (typeof speechSynthesis !== "undefined") speechSynthesis.onvoiceschanged = () => {};
   }, []);
 
-  // Speak question when active index shifts
   useEffect(() => {
-    if (!voice || sessionComplete || !questionData) return;
-    speakText(questionData.question, voice, soundOn);
-  }, [currentQ, voice, sessionComplete]);
+    if (sessionComplete || !questionData) return;
+    setTimeout(() => speak(questionData.question, soundOn), 300);
+  }, [currentQ, sessionComplete]);
 
   const handleOptionClick = (opt, index) => {
     if (selectedIndex !== null) return;
-
     setSelectedIndex(index);
-    setHoveredIndex(null);
 
-    const isCorrect = validateAnswer(opt);
+    // ✅ FIX: opt.isCorrect directly check karo
+    const isCorrect = opt.isCorrect === true;
 
     if (isCorrect) {
-      setMessage("Correct answer ✅");
-      speakText("Correct answer", voice, soundOn);
-
+      setScore(s => s + 1);
+      setMessage("Correct! Well done ✅");
+      speak("Correct! Well done", soundOn);
       setTimeout(() => {
         setSelectedIndex(null);
         setMessage("Read carefully before answering.");
         if (currentQ < greetingQuestions.length - 1) {
-          setCurrentQ((prev) => prev + 1);
+          setCurrentQ(p => p + 1);
         } else {
           setSessionComplete(true);
-          setMessage("Session completed 🎯");
-          speakText("Session completed", voice, soundOn);
+          speak("Session complete! Great job!", soundOn);
         }
       }, 1200);
     } else {
-      setMessage("Wrong answer, try again ❌");
-      speakText("Wrong answer, try again", voice, soundOn);
-
+      setMessage("Not quite, try again ❌");
+      speak("Not quite, try again", soundOn);
       setTimeout(() => {
         setSelectedIndex(null);
         setMessage("Read carefully before answering.");
@@ -83,92 +76,105 @@ const GreetingScenerio = () => {
   };
 
   const getOptionStyle = (opt, index) => {
-    const isSelected = selectedIndex === index;
-    const isHovered = hoveredIndex === index && selectedIndex === null;
-
-    if (isSelected && opt.isCorrect) {
-      return {
-        padding: "16px", borderRadius: "12px", border: "2px solid #16a34a",
-        background: "#dcfce7", color: "#15803d", fontWeight: "600", fontSize: "15px",
-        cursor: "default", transition: "all 0.15s ease", userSelect: "none",
-      };
+    const base = { padding: "14px 18px", borderRadius: "12px", fontSize: "14px", fontWeight: "500", cursor: "pointer", transition: "all 0.15s ease", userSelect: "none", border: "1px solid" };
+    if (selectedIndex === index) {
+      return opt.isCorrect
+        ? { ...base, background: "rgba(46,196,182,0.15)", borderColor: "#2EC4B6", color: "#2EC4B6" }
+        : { ...base, background: "rgba(232,72,85,0.15)", borderColor: "#E84855", color: "#E84855" };
     }
-    if (isSelected && !opt.isCorrect) {
-      return {
-        padding: "16px", borderRadius: "12px", border: "2px solid #dc2626",
-        background: "#fee2e2", color: "#b91c1c", fontWeight: "600", fontSize: "15px",
-        cursor: "default", transition: "all 0.15s ease", userSelect: "none",
-      };
-    }
-    if (isHovered) {
-      return {
-        padding: "16px", borderRadius: "12px", border: "1.5px solid #60a5fa",
-        background: "#dbeafe", fontWeight: "500", fontSize: "15px",
-        cursor: "pointer", transform: "scale(1.02)", transition: "all 0.15s ease", userSelect: "none",
-      };
-    }
-    return {
-      padding: "16px", borderRadius: "12px", border: "1.5px solid #e5e7eb",
-      background: "#ffffff", color: "#1f2937", fontWeight: "500", fontSize: "15px",
-      cursor: selectedIndex !== null ? "default" : "pointer", transition: "all 0.15s ease", userSelect: "none",
-    };
+    return { ...base, background: "rgba(255,255,255,0.04)", borderColor: "#2A2456", color: "#C4C0D8" };
   };
-
-  const progress = calculateProgress(currentQ, greetingQuestions.length);
 
   if (sessionComplete) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 16px", position: "relative", overflow: "hidden", background: "linear-gradient(135deg, #bfdbfe, #e9d5ff, #fbcfe8)" }}>
-        <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} numberOfPieces={300} />
-        <div style={{ position: "absolute", inset: 0, opacity: 0.2, backgroundImage: `url(${bgPattern})`, backgroundRepeat: "repeat" }} />
-        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} style={{ width: "100%", maxWidth: "420px", background: "rgba(255,255,255,0.85)", backdropFilter: "blur(16px)", borderRadius: "24px", boxShadow: "0 20px 60px rgba(0,0,0,0.15)", padding: "32px", textAlign: "center", position: "relative", zIndex: 10 }}>
-          <div style={{ fontSize: "60px", marginBottom: "16px" }}>🎉</div>
-          <h1 style={{ fontSize: "22px", fontWeight: "700", color: "#1f2937", marginBottom: "8px" }}>Session Complete!</h1>
-          <p style={{ color: "#6b7280", marginBottom: "24px" }}>Great job! You completed all the greeting questions successfully.</p>
-          <button onClick={() => { setRestarting(true); setTimeout(() => { setCurrentQ(0); setSessionComplete(false); setRestarting(false); }, 500); }} disabled={restarting} style={{ padding: "12px 24px", background: "linear-gradient(to right, #3b82f6, #a855f7)", color: "#fff", fontWeight: "600", borderRadius: "12px", border: "none", cursor: "pointer", fontSize: "15px" }}>
-            {restarting ? "Restarting..." : "🔄 Restart Session"}
-          </button>
+      <div style={{ minHeight: "100vh", background: "#0D0B1E", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", overflow: "hidden" }}>
+        <Confetti width={window.innerWidth} height={window.innerHeight} recycle={false} numberOfPieces={200} colors={["#7B5EA7","#5B4FCF","#2EC4B6","#9B72CF"]} />
+        {/* Anime chars on complete screen too */}
+        <img src={animeLeft}  alt="" style={{ position: "absolute", left: 0,  bottom: 0, width: "220px", opacity: 0.5, zIndex: 1 }} />
+        <img src={animeRight} alt="" style={{ position: "absolute", right: 0, bottom: 0, width: "220px", opacity: 0.5, zIndex: 1 }} />
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+          style={{ background: "#141226", border: "1px solid #2A2456", borderRadius: "24px", padding: "48px 40px", textAlign: "center", maxWidth: "420px", width: "100%", margin: "16px", zIndex: 2 }}>
+          <div style={{ fontSize: "56px", marginBottom: "16px" }}>🎉</div>
+          <h1 style={{ fontSize: "24px", fontWeight: "700", color: "#E8E6F0", marginBottom: "8px" }}>Session Complete!</h1>
+          <p style={{ color: "#8B87A8", marginBottom: "8px" }}>You scored <span style={{ color: "#9B72CF", fontWeight: "700" }}>{score}/{greetingQuestions.length}</span></p>
+          <div style={{ display: "flex", gap: "12px", justifyContent: "center", marginTop: "24px" }}>
+            <button onClick={() => { setCurrentQ(0); setSessionComplete(false); setScore(0); }}
+              style={{ padding: "12px 24px", background: "linear-gradient(135deg, #7B5EA7, #5B4FCF)", color: "#fff", fontWeight: "600", borderRadius: "12px", border: "none", cursor: "pointer" }}>
+              🔄 Restart
+            </button>
+            <button onClick={() => navigate("/scenarios")}
+              style={{ padding: "12px 24px", background: "rgba(255,255,255,0.05)", color: "#8B87A8", fontWeight: "600", borderRadius: "12px", border: "1px solid #2A2456", cursor: "pointer" }}>
+              ← Back
+            </button>
+          </div>
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "0 16px", position: "relative", overflow: "hidden", background: "linear-gradient(135deg, #bfdbfe, #e9d5ff, #fbcfe8)" }}>
-      <div style={{ position: "absolute", inset: 0, opacity: 0.2, backgroundImage: `url(${bgPattern})`, backgroundRepeat: "repeat" }} />
-      <img src={animeLeft} alt="" style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", width: "200px", display: window.innerWidth < 768 ? "none" : "block" }} />
-      <img src={animeRight} alt="" style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", width: "200px", display: window.innerWidth < 768 ? "none" : "block" }} />
+    <div style={{ minHeight: "100vh", background: "#0D0B1E", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 16px", position: "relative", overflow: "hidden" }}>
 
-      <div style={{ width: "100%", maxWidth: "720px", background: "rgba(255,255,255,0.75)", backdropFilter: "blur(16px)", borderRadius: "24px", boxShadow: "0 20px 60px rgba(0,0,0,0.12)", padding: "24px", position: "relative", zIndex: 10 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <img src={teacher} alt="" style={{ width: "48px", height: "48px", borderRadius: "12px" }} />
-            <div>
-              <p style={{ fontWeight: "700", fontSize: "15px", margin: 0, color: "#111827" }}>Learning Assistant</p>
-              <p style={{ fontSize: "12px", color: "#6b7280", margin: 0 }}>{message}</p>
-            </div>
-          </div>
-          <button onClick={() => setSoundOn(!soundOn)} style={{ padding: "6px 12px", background: "#ffffff", border: "1px solid #e5e7eb", borderRadius: "8px", cursor: "pointer", fontSize: "13px" }}>
-            {soundOn ? "🔊 On" : "🔇 Off"}
+      {/* ✅ Anime characters - left & right */}
+      <img src={animeLeft}  alt="" style={{ position: "absolute", left: 0,  bottom: 0, width: "220px", zIndex: 1, pointerEvents: "none" }} />
+      <img src={animeRight} alt="" style={{ position: "absolute", right: 0, bottom: 0, width: "220px", zIndex: 1, pointerEvents: "none" }} />
+
+      <div style={{ width: "100%", maxWidth: "680px", position: "relative", zIndex: 2 }}>
+
+        {/* Top bar */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
+          <button onClick={() => navigate("/scenarios")}
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid #2A2456", borderRadius: "10px", padding: "8px 16px", color: "#8B87A8", cursor: "pointer", fontSize: "13px" }}>
+            ← Scenarios
           </button>
-        </div>
-
-        <div style={{ marginBottom: "16px" }}>
-          <div style={{ height: "8px", background: "#e5e7eb", borderRadius: "99px" }}>
-            <div style={{ height: "8px", borderRadius: "99px", background: "linear-gradient(to right, #3b82f6, #a855f7)", width: `${progress}%`, transition: "width 0.3s ease" }} />
+          <div style={{ display: "flex", gap: "10px" }}>
+            <span style={{ fontSize: "11px", padding: "4px 12px", borderRadius: "999px", background: "rgba(123,94,167,0.15)", color: "#9B72CF", border: "1px solid rgba(123,94,167,0.3)" }}>
+              Beginner
+            </span>
+            <button onClick={() => setSoundOn(s => !s)}
+              style={{ background: "rgba(255,255,255,0.05)", border: "1px solid #2A2456", borderRadius: "10px", padding: "6px 14px", color: "#8B87A8", cursor: "pointer", fontSize: "13px" }}>
+              {soundOn ? "🔊 On" : "🔇 Off"}
+            </button>
           </div>
         </div>
 
-        <h1 style={{ fontSize: "20px", fontWeight: "600", textAlign: "center", marginBottom: "24px", color: "#111827" }}>
-          {questionData?.question}
-        </h1>
+        {/* Main card */}
+        <div style={{ background: "#141226", border: "1px solid #231E47", borderRadius: "20px", padding: "28px" }}>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "12px" }}>
-          {questionData?.options.map((opt, i) => (
-            <div key={i} style={getOptionStyle(opt, i)} onClick={() => handleOptionClick(opt, i)} onMouseEnter={() => selectedIndex === null && setHoveredIndex(i)} onMouseLeave={() => setHoveredIndex(null)}>
-              {opt.text}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+            <div style={{ width: "40px", height: "40px", borderRadius: "12px", background: "linear-gradient(135deg, #7B5EA7, #5B4FCF)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px", flexShrink: 0 }}>
+              🤝
             </div>
-          ))}
+            <div style={{ flex: 1 }}>
+              <p style={{ margin: 0, fontWeight: "600", fontSize: "13px", color: "#E8E6F0" }}>Greeting Practice</p>
+              <p style={{ margin: 0, fontSize: "12px", color: "#8B87A8" }}>{message}</p>
+            </div>
+            <div style={{ fontSize: "12px", color: "#8B87A8", flexShrink: 0 }}>
+              {currentQ + 1} / {greetingQuestions.length}
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div style={{ height: "6px", background: "#2A2456", borderRadius: "99px", marginBottom: "24px", overflow: "hidden" }}>
+            <div style={{ height: "100%", borderRadius: "99px", background: "linear-gradient(90deg, #7B5EA7, #5B4FCF)", width: `${progress}%`, transition: "width 0.3s ease" }} />
+          </div>
+
+          {/* Question */}
+          <AnimatePresence mode="wait">
+            <motion.h2 key={currentQ} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+              style={{ fontSize: "18px", fontWeight: "600", color: "#E8E6F0", textAlign: "center", marginBottom: "24px", lineHeight: "1.5" }}>
+              {questionData?.question}
+            </motion.h2>
+          </AnimatePresence>
+
+          {/* Options */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            {questionData?.options.map((opt, i) => (
+              <div key={i} style={getOptionStyle(opt, i)} onClick={() => handleOptionClick(opt, i)}>
+                {opt.text}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

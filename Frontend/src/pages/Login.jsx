@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { loginUser } from '../services/api' // 👈 Seedhe API service import ki
+import { useAuth } from '../context/AuthContext'  // ← useAuth use karo
 
 export default function Login() {
   const [form, setForm]       = useState({ email: '', password: '' })
   const [error, setError]     = useState('')
   const [loading, setLoading] = useState(false)
+  const { login }             = useAuth()   // ← AuthContext ka login
   const navigate              = useNavigate()
 
   function handle(e) {
@@ -21,16 +22,8 @@ export default function Login() {
     }
     setLoading(true)
     try {
-      // 🚀 Direct call to the working 5000 URL wrapper
-      const response = await loginUser({ email: form.email, password: form.password })
-      
-      if (response.data?.token) {
-        localStorage.setItem('ise_token', response.data.token)
-        localStorage.setItem('user_name', response.data.user?.name || '')
-        navigate('/dashboard')
-      } else {
-        setError('Token generation mismatch. Try again.')
-      }
+      await login(form.email, form.password)  // ← yeh token + user dono save karta hai
+      navigate('/dashboard')
     } catch (err) {
       setError(err.response?.data?.error || 'Invalid credentials. Please try again.')
     } finally {
@@ -79,42 +72,23 @@ export default function Login() {
 
           <form onSubmit={submit} className="flex flex-col gap-4">
             <div>
-              <label className="text-xs font-medium mb-1.5 block" style={{ color: '#8B87A8' }}>
-                Email
-              </label>
-              <input
-                type="email"
-                name="email"
-                placeholder="example@email.com"
-                value={form.email}
-                onChange={handle}
-                className="vr-input"
-                autoComplete="email"
-              />
+              <label className="text-xs font-medium mb-1.5 block" style={{ color: '#8B87A8' }}>Email</label>
+              <input type="email" name="email" placeholder="example@email.com"
+                     value={form.email} onChange={handle} className="vr-input" autoComplete="email" />
             </div>
 
             <div>
               <div className="flex justify-between items-center mb-1.5">
                 <label className="text-xs font-medium" style={{ color: '#8B87A8' }}>Password</label>
-                <a href="#" className="text-xs hover:underline" style={{ color: '#9B72CF' }}>
-                  Forgot Password?
-                </a>
+                <a href="#" className="text-xs hover:underline" style={{ color: '#9B72CF' }}>Forgot Password?</a>
               </div>
-              <input
-                type="password"
-                name="password"
-                placeholder="••••••••"
-                value={form.password}
-                onChange={handle}
-                className="vr-input"
-                autoComplete="current-password"
-              />
+              <input type="password" name="password" placeholder="••••••••"
+                     value={form.password} onChange={handle} className="vr-input" autoComplete="current-password" />
             </div>
 
             {error && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
-                   style={{ background: 'rgba(232,72,85,0.1)', border: '1px solid rgba(232,72,85,0.3)',
-                            color: '#F08090' }}>
+                   style={{ background: 'rgba(232,72,85,0.1)', border: '1px solid rgba(232,72,85,0.3)', color: '#F08090' }}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
                   <line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -138,9 +112,7 @@ export default function Login() {
 
           <p className="text-center text-sm mt-5" style={{ color: '#8B87A8' }}>
             Don't have an account?{' '}
-            <Link to="/register" className="font-semibold hover:underline" style={{ color: '#9B72CF' }}>
-              Register
-            </Link>
+            <Link to="/register" className="font-semibold hover:underline" style={{ color: '#9B72CF' }}>Register</Link>
           </p>
         </div>
       </div>

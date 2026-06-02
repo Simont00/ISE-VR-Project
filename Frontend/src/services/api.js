@@ -1,49 +1,91 @@
-import axios from 'axios';
+import axios from "axios";
 
-// Codespaces ka 5000 port wala exact URL bina kisi aakhiri slash ke
+/* =========================
+   BASE CONFIG (ENV BASED)
+========================= */
+
 const api = axios.create({
-  baseURL: 'https://bug-free-space-chainsaw-97v4g5grwv9gfxxxw-5000.app.github.dev',
+  baseURL: import.meta.env.VITE_API_URL,
   timeout: 10000,
-  headers: { 
-    'Content-Type': 'application/json' 
-  }
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem('ise_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+/* =========================
+   AUTO TOKEN ATTACH
+========================= */
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("ise_token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
+/* =========================
+   HANDLE UNAUTHORIZED
+========================= */
+
 api.interceptors.response.use(
-  response => response,
-  error => {
+  (response) => response,
+  (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('ise_token');
-      window.location.href = '/login';
+      localStorage.removeItem("ise_token");
+      window.location.href = "/login";
     }
     return Promise.reject(error);
   }
 );
 
-// ✅ AUTH — Ab exact backend endpoints (/api/register aur /api/login) par hit karega
-export const registerUser     = (data) => api.post('/api/register', data);
-export const loginUser        = (data) => api.post('/api/login', data);
-export const getMe            = ()     => api.get('/api/profile');   
-export const updateMe         = (data) => api.put('/api/update', data); 
-export const changePassword   = (data) => api.put('/api/change-password', data);
-export const getUserProfile = () => api.get('/profile');
-// Taaki ye perfect hit maare: /api/profile par!
-// SESSIONS
-export const getSessions  = ()         => api.get('/api/sessions');
-export const startSession = (data)     => api.post('/api/sessions/start', data);
-export const endSession   = (id, data) => api.put(`/api/sessions/${id}/end`, data);
+/* =========================
+   AUTH APIs
+========================= */
 
-// EMOTIONS
-export const logEmotion  = (data)      => api.post('/api/emotions', data);
-export const getEmotions = (sessionId) => api.get(`/api/emotions?session=${sessionId}`);
+export const registerUser = (data) =>
+  api.post("/api/auth/register", data);
 
-// REPORTS
-export const getReports = () => api.get('/api/reports');
+export const loginUser = (data) =>
+  api.post("/api/auth/login", data);
+
+export const getMe = () =>
+  api.get("/api/auth/profile");
+
+export const updateMe = (data) =>
+  api.put("/api/auth/update", data);
+
+export const changePassword = (data) =>
+  api.put("/api/auth/change-password", data);
+
+/* =========================
+   SESSIONS (CLEANED)
+========================= */
+
+export const getSessions = () =>
+  api.get("/api/session/user"); // optional fallback
+
+export const startSession = (userId) =>
+  api.post("/api/session/start", { user_id: userId });
+
+export const endSession = (sessionId) =>
+  api.post(`/api/session/end/${sessionId}`);
+
+/* =========================
+   EMOTIONS
+========================= */
+
+export const logEmotion = (data) =>
+  api.post("/api/emotions", data);
+
+export const getEmotions = (sessionId) =>
+  api.get(`/api/emotions?session=${sessionId}`);
+
+/* =========================
+   REPORTS
+========================= */
+
+export const getReports = () =>
+  api.get("/api/reports");
 
 export default api;
