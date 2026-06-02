@@ -26,7 +26,7 @@ export function AuthProvider({ children }) {
       api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
       api
-        .get("/api/profile")
+        .get("/api/auth/profile")
         .then((res) => setUser(res.data))
         .catch(() => logout())
         .finally(() => setLoading(false));

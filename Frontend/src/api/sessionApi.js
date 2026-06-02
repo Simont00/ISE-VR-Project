@@ -1,53 +1,24 @@
-// =============================================
-// sessionApi.js — FIXED VERSION
-// =============================================
+import api from "./api";
 
-const BASE_URL = "http://127.0.0.1:5000/api"; // ✔ IMPORTANT FIX
-
-const getHeaders = () => ({
-  "Content-Type": "application/json",
-  Authorization: `Bearer ${localStorage.getItem("ise_token") || ""}`,
-});
+/* =========================
+   SESSION API (AXIOS VERSION)
+========================= */
 
 // ▶️ Start session
-export const startSession = async (userId) => {
-  const response = await fetch(`${BASE_URL}/session/start`, {
-    method: "POST",
-    headers: getHeaders(),
-    body: JSON.stringify({ user_id: userId }),
-  });
-
-  if (!response.ok) throw new Error("Session start failed");
-  return response.json();
-};
+export const startSession = (userId) =>
+  api.post("/api/session/start", { user_id: userId });
 
 // ⏹️ End session
-export const endSession = async (sessionId) => {
-  const response = await fetch(`${BASE_URL}/session/end/${sessionId}`, {
-    method: "POST",
-    headers: getHeaders(),
-  });
-
-  if (!response.ok) throw new Error("Session end failed");
-  return response.json();
-};
+export const endSession = (sessionId) =>
+  api.post(`/api/session/end/${sessionId}`);
 
 // 📜 User sessions
-export const getUserSessions = async (userId) => {
-  const response = await fetch(`${BASE_URL}/session/user/${userId}`, {
-    headers: getHeaders(),
-  });
-
-  if (!response.ok) throw new Error("Failed to fetch sessions");
-  return response.json();
-};
+export const getUserSessions = (userId) =>
+  api.get(`/api/session/user/${userId}`).then(res => res.data);
 
 // 🟢 Active session
-export const getActiveSession = async (userId) => {
-  const response = await fetch(`${BASE_URL}/session/active/${userId}`, {
-    headers: getHeaders(),
-  });
-
-  if (!response.ok) return null;
-  return response.json();
-};
+export const getActiveSession = (userId) =>
+  api
+    .get(`/api/session/active/${userId}`)
+    .then(res => res.data)
+    .catch(() => null);
